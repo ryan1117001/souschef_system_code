@@ -6,16 +6,18 @@ STEP = 20 # Step Pin
 STEP_CNT = 360
 
 GPIO.setmode(GPIO.BCM)
+
 GPIO.setup(DIR,GPIO.OUT)
 GPIO.setup(STEP, GPIO.OUT)
+
 GPIO.output(DIR, GPIO.LOW)
 
+stepperOne = GPIO.PWM(STEP,200) # 200 ticks per second
+
+# Spin continuously
 try:
-	for x in range(360):
-		GPIO.output(STEP, GPIO.HIGH)
-		sleep(.03)
-		GPIO.output(STEP, GPIO.LOW)
-		sleep(.03)
+	stepperOne.start(50) # 50 duty cycle		
 except KeyboardInterrupt:
 	print("Clean up")
 	GPIO.cleanup()
+	stepperOne.stop()
