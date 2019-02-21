@@ -13,13 +13,25 @@ def cleanAndExit():
     print "Bye!"
     sys.exit()
 
+motors= {0,0,0,0,0,0}
+hx0 = HX711(14, 15)
+hx1 = HX711(18, 23)
+hx2 = HX711(24, 25)
+hx3 = HX711(12, 16)
+hx4 = HX711(20, 21)
+hx5 = HX711(19, 26)
+
+hxs={hx0, hx1, hx2, hx3, hx4, hx5}
 class SimpleEcho(WebSocket):
     
     def handleMessage(self):
+        i=0
         ingredients = json.loads(self.data) # loads JSON Object into an array
-        print(ingredients[0]["name"]) # how to access items in the array
-        eW=150000
-        mW=0
+        for ingredient in ingredients:
+            print(ingredient["name"]) # how to access items in the array
+            if(ingredient["enable"]==true):
+                motors[i]=ingredient["grams"]
+            i+=1
         while eW-mW>5:
             try:
                 # These three lines are usefull to debug wether to use MSB or LSB in the reading formats
@@ -74,14 +86,14 @@ class SimpleEcho(WebSocket):
         cleanAndExit()
 
 
-hx = HX711(14, 15)
+
 
 #bit order
 hx.set_reading_format("MSB", "MSB")
 
 #weight reference
-#hx.set_reference_unit(113)
-hx.set_reference_unit(1)
+hx.set_reference_unit(113)
+#hx.set_reference_unit(1)
 
 #hx setup
 hx.reset()
