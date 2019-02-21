@@ -2,6 +2,7 @@
 1. Combine all three functions
 2. Code Review
 3. Optimization
+
 # Load Cell
 1. Calibration Code for load cell  
 2. Conversion for grams
