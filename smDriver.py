@@ -16,7 +16,8 @@ stepperOne = GPIO.PWM(STEP,200) # 200 ticks per second
 
 # Spin continuously
 try:
-	stepperOne.start(50) # 50 duty cycle		
+	while(True):
+		stepperOne.start(50) # 50 duty cycle		
 except KeyboardInterrupt:
 	print("Clean up")
 	GPIO.cleanup()
