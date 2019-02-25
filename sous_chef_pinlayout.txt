@@ -1,0 +1,7 @@
+hx  = (data,clk)	motor  = (step, dir)
+hx1 = (14,15) 		motor1 = (20, 21)
+hx2 = (18,23)		motor2 = (11, 5)
+hx3 = (24,25)		motor3 = (10, 9)
+hx4 = (12,16)		motor4 = (22,27) 
+hx5 = (6, 13)		motor5 = (17, 4)
+hx6 = (19,26)		motor6 = (2,3)
