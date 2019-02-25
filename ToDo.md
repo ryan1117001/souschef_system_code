@@ -4,8 +4,8 @@
 3. Optimization
 
 # Load Cell
-1. Calibration Code for load cell  
-2. Conversion for grams
+1. ~~Calibration Code for load cell  ~~
+2. ~~Conversion for grams~~
 
 # Stepper Motor
 1. ~~Use PWM~~
