@@ -18,7 +18,7 @@ def cleanAndExit():
     sys.exit()
 
 def handleDispense(inputted_grams):
-    drop_time = desired_grams / FOOD_RATE_ONE
+    drop_time = inputted_grams / FOOD_RATE_ONE
         
     # May need to figure out a way to close it
     close_time = drop_time - ((drop_time % ONE_PADDLE_DIVET) * ONE_PADDLE_DIVET)
@@ -50,7 +50,7 @@ class MotorEcho(WebSocket):
         # dispenses within a margiin of 10 grams
         # may want to look into this
         while ((desired_grams - val) > 10):
-            handleDispense(desired_grams)
+            handleDispense(desired_grams - val)
 
             # get value in grams
             val = hx.get_weight(5)
