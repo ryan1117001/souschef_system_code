@@ -1,7 +1,5 @@
-# calibration.py
+# sous_chef.py
 # Ryan Hua and Kofi Dinizulu
-# Will attempt to get only one set of dispenser, motor, and load cell to work
-# others will be made later
 
 import RPi.GPIO as GPIO
 import json
@@ -19,31 +17,50 @@ def cleanAndExit():
     print "Bye!"
     sys.exit()
 
+def handleDispense(inputted_grams):
+    drop_time = desired_grams / FOOD_RATE_ONE
+        
+    # May need to figure out a way to close it
+    close_time = drop_time - ((drop_time % ONE_PADDLE_DIVET) * ONE_PADDLE_DIVET)
 
-hx = HX711(14, 15)
+    # move motor
+    stepperOne.ChangeDutyCycle(50)
+    time.sleep(drop_time)
+    stepperOne.ChangeDutyCycle(0)
 
+    # to close the opening in the paddle
+    GPIO.output(DIR, GPIO.HIGH)
+    stepperOne.ChangeDutyCycle(50)
+    time.sleep(close_time)
+    stepperOne.ChangeDutyCycle(0)
+    GPIO.output(DIR, GPIO.LOW)
 
 class MotorEcho(WebSocket):
     def handleMessage(self):
         # loads JSON Object into a python array
         ingredients = json.loads(self.data)
-        print(ingredients)
-
-        # move motor
-        stepperOne.ChangeDutyCycle(50)
-        time.sleep(1)
-        stepperOne.ChangeDutyCycle(0)
-
+        
+        # Amount of time needed to sleep
+        desired_grams = ingredients[0]['grams']
+        
         # get value in grams
         val = hx.get_weight(5)
-        print(val, "grams after one revolution")
-        # rate at which the ingredient falls.
-        # one revolution is one second
+        print(val, "grams")
+
+        # dispenses within a margiin of 10 grams
+        # may want to look into this
+        while ((desired_grams - val) > 10):
+            handleDispense(desired_grams)
+
+            # get value in grams
+            val = hx.get_weight(5)
+            print(val, "grams")
+
 
         # hx reset
         hx.power_down()
         hx.power_up()
-
+        
         # send packet
         self.sendMessage("Completed")
 
@@ -54,6 +71,9 @@ class MotorEcho(WebSocket):
         print(self.address, 'closed')
         cleanAndExit()
 
+
+# HX711 initial pin setup
+hx = HX711(14, 15)
 
 # bit order
 hx.set_reading_format("MSB", "MSB")
@@ -79,6 +99,14 @@ GPIO.output(DIR, GPIO.LOW)
 # 200 ticks per second = 1 revolution per second
 stepperOne = GPIO.PWM(STEP, 200)
 stepperOne.start(0)
+
+# Ingredient grams/revolution
+# This equates to the amount of food that comes out at one revolution
+# At 200 Hz, that is one revolution per second.
+FOOD_RATE_ONE = 1
+
+# Time constants for the motor
+ONE_PADDLE_DIVET = 1/6
 
 # server setup
 server = SimpleWebSocketServer('10.1.250.128', 8000, MotorEcho)
