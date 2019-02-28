@@ -1,5 +1,9 @@
 # sous_chef.py
 # Ryan Hua and Kofi Dinizulu
+# Currently only handles one container
+# As we continue to prototype the device,
+# we will change and optimize the code to handle
+# a total of six containers.
 
 import RPi.GPIO as GPIO
 import json
@@ -16,6 +20,21 @@ def cleanAndExit():
     stepperOne.stop()
     print "Bye!"
     sys.exit()
+
+def handleCalibration():
+    stepperOne.ChangeDutyCycle(50)
+        time.sleep(1)
+        stepperOne.ChangeDutyCycle(0)
+
+        # get value in grams
+        val = hx.get_weight(5)
+        print(val, "grams after one revolution")
+        # rate at which the ingredient falls.
+        # one revolution is one second
+        FOOD_RATE_ONE = val
+        # hx reset
+        hx.power_down()
+        hx.power_up()
 
 def handleDispense(inputted_grams):
     drop_time = inputted_grams / FOOD_RATE_ONE
@@ -37,29 +56,34 @@ def handleDispense(inputted_grams):
 
 class MotorEcho(WebSocket):
     def handleMessage(self):
-        # loads JSON Object into a python array
-        ingredients = json.loads(self.data)
-        
-        # Amount of time needed to sleep
-        desired_grams = ingredients[0]['grams']
-        
-        # get value in grams
-        val = hx.get_weight(5)
-        print(val, "grams")
 
-        # dispenses within a margiin of 10 grams
-        # may want to look into this
-        while ((desired_grams - val) > 10):
-            handleDispense(desired_grams - val)
-
+        # if statement to see which button was pressed
+        if (self.data == "calibration"):
+            handleCalibration()
+        else:
+            # loads JSON Object into a python array
+            ingredients = json.loads(self.data)
+            
+            # Amount of time needed to sleep
+            desired_grams = ingredients[0]['grams']
+            
             # get value in grams
             val = hx.get_weight(5)
             print(val, "grams")
 
+            # dispenses within a margiin of 10 grams
+            # may want to look into this
+            while ((desired_grams - val) > 10):
+                handleDispense(desired_grams - val)
 
-        # hx reset
-        hx.power_down()
-        hx.power_up()
+                # get value in grams
+                val = hx.get_weight(5)
+                print(val, "grams")
+
+
+            # hx reset
+            hx.power_down()
+            hx.power_up()
         
         # send packet
         self.sendMessage("Completed")
