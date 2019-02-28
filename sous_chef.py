@@ -23,18 +23,18 @@ def cleanAndExit():
 
 def handleCalibration():
     stepperOne.ChangeDutyCycle(50)
-        time.sleep(1)
-        stepperOne.ChangeDutyCycle(0)
+    time.sleep(1)
+    stepperOne.ChangeDutyCycle(0)
 
-        # get value in grams
-        val = hx.get_weight(5)
-        print(val, "grams after one revolution")
-        # rate at which the ingredient falls.
-        # one revolution is one second
-        FOOD_RATE_ONE = val
-        # hx reset
-        hx.power_down()
-        hx.power_up()
+    # get value in grams
+    val = hx.get_weight(5)
+    print(val, "grams after one revolution")
+    # rate at which the ingredient falls.
+    # one revolution is one second
+    FOOD_RATE_ONE = val
+    # hx reset
+    hx.power_down()
+    hx.power_up()
 
 def handleDispense(inputted_grams):
     drop_time = inputted_grams / FOOD_RATE_ONE
