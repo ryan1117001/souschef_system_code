@@ -1,9 +1,11 @@
-# sous_chef.py
+# sous_chef_v2.py
 # Ryan Hua and Kofi Dinizulu
 # Currently only handles one container
 # As we continue to prototype the device,
 # we will change and optimize the code to handle
 # a total of six containers.
+
+# no need for calibration
 
 import RPi.GPIO as GPIO
 import json
@@ -56,80 +58,39 @@ def handleCalibration():
     hx.power_down()
     hx.power_up()
 
-def handleDispense(inputted_grams):
+def handleDispense():
     
-    drop_time = inputted_grams / FOOD_RATE_ONE
-
-    timeout = drop_time # amount of seconds
     stepperOne.ChangeDutyCycle(50)
-    timeout_start = time.time()
-
-    while (time.time() < timeout_start + timeout):
-        GPIO.output(DIR,GPIO.HIGH)
-        time.sleep(.5)
-        GPIO.output(DIR,GPIO.LOW)
-        time.sleep(.5)
-
+    GPIO.output(DIR,GPIO.HIGH)
+    time.sleep(.25)
+    GPIO.output(DIR,GPIO.LOW)
+    time.sleep(.25)
     stepperOne.ChangeDutyCycle(0)
-
-    # # May need to figure out a way to close it
-    # close_time = drop_time % ONE_PADDLE_DIVET
-    
-    # print(close_time)
-    
-    # # move motor
-    # stepperOne.ChangeDutyCycle(50)
-    # time.sleep(drop_time)
-    # stepperOne.ChangeDutyCycle(0)
-
-    # # to close the opening in the paddle
-    # GPIO.output(DIR, GPIO.HIGH)
-    # stepperOne.ChangeDutyCycle(50)
-    # time.sleep(close_time)
-    # stepperOne.ChangeDutyCycle(0)
-    # GPIO.output(DIR, GPIO.LOW)
-
-    # # let crumbs/ingredient to fall
-    # time.sleep(1)
+    time.sleep(.2)
 
 class MotorEcho(WebSocket):
     def handleMessage(self):
         # reset the load cell
         hx.tare()
 
-        # if statement to see which button was pressed
-        if (self.data == "calibration"):
-            handleCalibration()
-        else:
-            # loads JSON Object into a python array
-            ingredients = json.loads(self.data)
+        # loads JSON Object into a python array
+        ingredients = json.loads(self.data)
             
-            # Amount of time needed to sleep
-            desired_grams = ingredients[0]['grams']
- 
-            # current amount on the scale
-            # should have been tared to 0
-            val = 0
+        # Amount of time needed to sleep
+        desired_grams = ingredients[0]['grams']
 
-            # previous value on the scale
-            prev_val = 0
+        # current amount on the scale
+        # should have been tared to 0
+        val = 0
+        prev_val = 0
 
-            # dispenses within a margiin of 10 grams
-            # may want to look into this
-
-            while (val < desired_grams - 10):
-                handleDispense(desired_grams - val)
-    
-                # current val to prev_val
-                prev_val = val
-                print(prev_val, val)
-                # get value in grams
-                val = toZero(hx.get_weight(5))
-                print(val, "grams")
-
-                if (prev_val == val):
-                    self.sendMessage("alert")
-                    return
+        while (val < desired_grams - 5)
+            handleDispense()
+            prev_val = val
+            val = toZero(hx.get_weight(5))
+            if (prev_val == val):
+                self.sendMessage("alert")
+                return
 
             # hx reset
             hx.power_down()
