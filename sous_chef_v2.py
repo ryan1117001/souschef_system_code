@@ -84,7 +84,7 @@ class MotorEcho(WebSocket):
         val = 0
         prev_val = 0
 
-        while (val < desired_grams - 5)
+        while (val + 5 < desired_grams)
             handleDispense()
             prev_val = val
             val = toZero(hx.get_weight(5))
