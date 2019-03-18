@@ -1,7 +1,9 @@
 # System Wide
-1. Combine all three functions
+1. ~~Combine all three functions~~
 2. Code Review
 3. Optimization
+4. Implement six containers
+5. sequential to concurrent
 
 # Load Cell
 1. ~~Calibration Code for load cell  ~~
