@@ -145,5 +145,4 @@ server = SimpleWebSocketServer('10.1.250.128', 8000, MotorControl)
 try:
     server.serveforever()
 except KeyboardInterrupt, SystemError:
-    GPIO.cleanup()
     cleanAndExit()

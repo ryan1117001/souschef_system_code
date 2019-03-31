@@ -33,23 +33,25 @@ hx5 = HX711(19,26)
 
 # hx tuple
 hxs = (hx0, hx1, hx2, hx3, hx4, hx5)
+weights = [0,0,0,0,0,0]
 
+testing = 2
+# on how the data is read
+hxs[testing].set_reading_format("MSB", "MSB")
 
-for hx in hxs:
-    # on how the data is read
-    hx.set_reading_format("MSB", "MSB")
-
-    # hx weight reference. Set to 1 gram
-    hx.set_reference_unit(1)
-    hx.reset()
-    hx.tare()
-    print "Tare done! Add weight now..."
+# hx weight reference. Set to 1 gram
+hxs[testing].set_reference_unit(1)
+hxs[testing].reset()
+hxs[testing].tare()
+print "Tare done! Add weight now..."
 
 while True:
     try:
-        for index, hx in enumerate(hxs):
-            val = hx.get_weight(5)
-            print('Current index ', index)
-            print('Weight:', val)
+        time.sleep(5)
+        val = hxs[testing].read_average(30)
+        print val
+        hxs[testing].power_down()
+        hxs[testing].power_up()
+        time.sleep(.01)
     except KeyboardInterrupt, SystemError:
         cleanAndExit()
