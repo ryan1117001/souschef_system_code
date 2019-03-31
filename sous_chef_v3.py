@@ -49,10 +49,11 @@ class MotorControl(WebSocket):
                 cur_grams = 0
                 prev_grams = 0
                 
-                while (cur_grams <= desired_grams):
+                while (desired_grams - cur_grams >3):
                     handleDispense(ID)
                     prev_grams = cur_grams
-                    cur_grams = toZero(hxs[ID].get_weight(5))
+                    #cur_grams = toZero(hxs[ID].get_weight(5))
+                    cur_grams = cur_grams+4
                     if (prev_grams == cur_grams):
                         self.sendMessage("alert")
                         # see what happens if its break instead of return
