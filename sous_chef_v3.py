@@ -9,8 +9,8 @@ import json
 import time
 import sys
 from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
-from time import sleep
 from hx711 import HX711
+import Queue
 
 # if the mass less than zero, it should be zero
 def toZero(number):
@@ -32,37 +32,44 @@ def cleanAndExit():
 def handleDispense(ID):
     steppers[ID].ChangeDutyCycle(50)
     GPIO.output(DIRS[ID], GPIO.HIGH)
-    time.sleep(.25)
+    time.sleep(.05)
     GPIO.output(DIRS[ID], GPIO.LOW)
-    time.sleep(.25)
+    time.sleep(.05)
     steppers[ID].ChangeDutyCycle(0)
     time.sleep (.1)
 
 class MotorControl(WebSocket):
     def handleMessage(self):
         # loads JSON Object into a python array
-        ingredients = json.loads(self.data)
-        for ingredient in ingredients:
-            if (ingredient['enable']):
-                ID = ingredient['id']
-                desired_grams = ingredient['grams']
-                cur_grams = 0
-                prev_grams = 0
-                
-                while (desired_grams - cur_grams >3):
-                    handleDispense(ID)
-                    prev_grams = cur_grams
-                    #cur_grams = toZero(hxs[ID].get_weight(5))
-                    cur_grams = cur_grams+4
-                    if (prev_grams == cur_grams):
-                        self.sendMessage("alert")
-                        # see what happens if its break instead of return
-                        return
-
-                    # hx reset
-                    hxs[ID].power_down()
-                    hxs[ID].power_up()    
-
+        msg = json.loads(self.data)
+        if (msg["type"] == "dispense"):
+            ingredients = msg["data"]
+            gram_list = []
+            for ingredient in ingredients:
+                if (ingredient['enable']):
+                    ID = ingredient['id']
+                    desired_grams = ingredient['grams']
+                    cur_grams = 0
+                    prev_grams = 0
+                    
+                    while (desired_grams - cur_grams > 3):
+                        handleDispense(ID)
+                        prev_grams = cur_grams
+                        # cur_grams = toZero(hxs[ID].get_weight(5))
+                        cur_grams = cur_grams + 4
+                        if (prev_grams == cur_grams):
+                            alert = json.dumps({"type": "alert", "data": { }})
+                            self.sendMessage(alert)
+                            # see what happens if its break instead of return
+                            break
+                        # hx reset
+                        hxs[ID].power_down()
+                        hxs[ID].power_up()    
+                        gram_list.append(cur_grams)
+            completed = json.dumps({"type": "completed", "data": gram_list})
+            self.sendMessage(completed)
+        else:
+            print("else statement")
     def handleConnected(self):
         print(self.address, 'connected')
 
@@ -78,16 +85,24 @@ hx3 = HX711(12,16)
 hx4 = HX711(6,13)
 hx5 = HX711(19,26)
 
+# valus for ref unit
+REF0 = -3151
+REF1 = -3091
+REF2 = -3190
+REF3 = -3190
+REF4 = -2940
+REF5 = -3190
+
+# ref_unit tuple
+ref_unit = (REF0, REF1, REF2, REF3, REF4, REF5)
+
 # hx tuple
 hxs = (hx0, hx1, hx2, hx3, hx4, hx5)
 
+for x in range(5):
+    hxs[x].set_reading_format("MSB","MSB")
 
-for hx in hxs:
-    # on how the data is read
-    hx.set_reading_format("MSB", "MSB")
-
-    # hx weight reference. Set to 1 gram
-    hx.set_reference_unit(3177)
+    hxs[x].set_reference_unit(ref_unit[x])
 
 # using pin names instead of pin location on RPI
 GPIO.setmode(GPIO.BCM)
@@ -141,7 +156,7 @@ for stepper in steppers:
 
 
 # server setup
-server = SimpleWebSocketServer('10.1.250.128', 8000, MotorControl)
+server = SimpleWebSocketServer('10.24.0.165', 8000, MotorControl)
 
 try:
     server.serveforever()
