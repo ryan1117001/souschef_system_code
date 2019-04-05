@@ -38,6 +38,7 @@ def handleDispense(ID):
     time.sleep (.1)
 
 class MotorControl(WebSocket):
+    print()
     def handleMessage(self):
         # loads JSON Object into a python array
         msg = json.loads(self.data)
@@ -47,11 +48,18 @@ class MotorControl(WebSocket):
             desired_grams = ingredient['grams']
             cur_grams = 0
             prev_grams = 0
-            time.sleep(3)
+
+            # reset the load cell
+            hxs[ID].tare()
+
             while (desired_grams - cur_grams > 3):
                 handleDispense(ID)
                 prev_grams = cur_grams
                 cur_grams = cur_grams + 4
+                # cur_grams = toZero(hxs[ID].get_weight(5))
+                # set to cur_grams for food testing
+                val = toZero(hxs[ID].get_weight(5))
+                print(val)
                 if (prev_grams == cur_grams):
                     alert = json.dumps({"type": "alert", "data": ID})
                     self.sendMessage(alert)
@@ -77,13 +85,13 @@ hx3 = HX711(12,16)
 hx4 = HX711(6,13)
 hx5 = HX711(19,26)
 
-# valus for ref unit
-REF0 = -3151
-REF1 = -3091
-REF2 = -3190
-REF3 = -3190
-REF4 = -2940
-REF5 = -3190
+# valus for ref unit. Should be set to 200 g
+REF0 = -3151 # 199
+REF1 = -3091 # 210
+REF2 = -3190 # 208
+REF3 = -3190 # 191
+REF4 = -2940 # 211
+REF5 = -3190 # 202
 
 # ref_unit tuple
 ref_unit = (REF0, REF1, REF2, REF3, REF4, REF5)
@@ -91,7 +99,7 @@ ref_unit = (REF0, REF1, REF2, REF3, REF4, REF5)
 # hx tuple
 hxs = (hx0, hx1, hx2, hx3, hx4, hx5)
 
-for x in range(5):
+for x in range(6):
     hxs[x].set_reading_format("MSB","MSB")
 
     hxs[x].set_reference_unit(ref_unit[x])
