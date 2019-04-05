@@ -2,36 +2,31 @@ from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 import time 
 import sys
 import json
-import Queue
+
 class SimpleEcho(WebSocket):
 
     def handleMessage(self):
         # echo message back to client
         msg = json.loads(self.data)
-        if (msg["type"] == "calibration"):
-            print("calibrating")
-        elif (msg["type"] == "dispense"):
-            ingredients = msg["data"]
+        print(msg)
+        if (msg["type"] == "dispense"):
+            ingredient = msg["data"]
+            ID = ingredient['id']
+            desired_grams = ingredient['grams']
+            cur_grams = 0
+            prev_grams = 0
             time.sleep(3)
-            gram_list = []
-            for g in range(5):
-                gram_list.append("g")
-            dispensed = json.dumps(
-                {
-                    "type": "completed",
-                    "data": gram_list
-                }
-            )
-            self.sendMessage(dispensed)
-        elif (msg["type"] == "alert"):
-            print("alerting")
-            alert = json.dumps({"type": "alert", "data": { 'disabled': False, 'validNum': True, 'text': 'Tap to Dispense' }})
-            self.sendMessage(alert)
-        elif (msg["type"] == "stop"):
-            print('stop')
+            while (desired_grams - cur_grams > 3):
+                prev_grams = cur_grams
+                cur_grams = cur_grams + 4
+                if (prev_grams == cur_grams):
+                    alert = json.dumps({"type": "alert", "data": ID})
+                    self.sendMessage(alert)
+                    break
+            completed = json.dumps({"type": "completed", "data": {"id": ID, "grams": cur_grams}})
+            self.sendMessage(completed)
         else:
-            time.sleep(3)
-            self.sendMessage("completed")
+            # add calibration code if time permits
 
     def handleConnected(self):
         print(self.address, 'connected')
@@ -39,6 +34,6 @@ class SimpleEcho(WebSocket):
     def handleClose(self):
         print(self.address, 'closed')
 
-server = SimpleWebSocketServer('10.1.69.142', 8000, SimpleEcho)
-# server = SimpleWebSocketServer('172.16.16.56', 8000, SimpleEcho)
+server = SimpleWebSocketServer('10.1.69.149', 8000, SimpleEcho)
+
 server.serveforever()

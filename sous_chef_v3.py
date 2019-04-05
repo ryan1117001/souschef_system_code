@@ -10,7 +10,6 @@ import time
 import sys
 from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 from hx711 import HX711
-import Queue
 
 # if the mass less than zero, it should be zero
 def toZero(number):
@@ -21,11 +20,11 @@ def toZero(number):
 
 # clean up the pins
 def cleanAndExit():
-    print "Cleaning..."
+    print("Cleaning...")
     GPIO.cleanup()
     for stepper in steppers:
         stepper.stop()
-    print "Bye!"
+    print("Bye!")
     sys.exit()
 
 # will need to work on this part
@@ -43,30 +42,23 @@ class MotorControl(WebSocket):
         # loads JSON Object into a python array
         msg = json.loads(self.data)
         if (msg["type"] == "dispense"):
-            ingredients = msg["data"]
-            gram_list = []
-            for ingredient in ingredients:
-                if (ingredient['enable']):
-                    ID = ingredient['id']
-                    desired_grams = ingredient['grams']
-                    cur_grams = 0
-                    prev_grams = 0
-                    
-                    while (desired_grams - cur_grams > 3):
-                        handleDispense(ID)
-                        prev_grams = cur_grams
-                        # cur_grams = toZero(hxs[ID].get_weight(5))
-                        cur_grams = cur_grams + 4
-                        if (prev_grams == cur_grams):
-                            alert = json.dumps({"type": "alert", "data": { }})
-                            self.sendMessage(alert)
-                            # see what happens if its break instead of return
-                            break
-                        # hx reset
-                        hxs[ID].power_down()
-                        hxs[ID].power_up()    
-                        gram_list.append(cur_grams)
-            completed = json.dumps({"type": "completed", "data": gram_list})
+            ingredient = msg["data"]
+            ID = ingredient['id']
+            desired_grams = ingredient['grams']
+            cur_grams = 0
+            prev_grams = 0
+            time.sleep(3)
+            while (desired_grams - cur_grams > 3):
+                handleDispense(ID)
+                prev_grams = cur_grams
+                cur_grams = cur_grams + 4
+                if (prev_grams == cur_grams):
+                    alert = json.dumps({"type": "alert", "data": ID})
+                    self.sendMessage(alert)
+                    break
+                hxs[ID].power_down()
+                hxs[ID].power_up() 
+            completed = json.dumps({"type": "completed", "data": {"id": ID, "grams": cur_grams}})
             self.sendMessage(completed)
         else:
             print("else statement")
@@ -156,7 +148,7 @@ for stepper in steppers:
 
 
 # server setup
-server = SimpleWebSocketServer('10.24.0.165', 8000, MotorControl)
+server = SimpleWebSocketServer('10.1.210.92', 8000, MotorControl)
 
 try:
     server.serveforever()
