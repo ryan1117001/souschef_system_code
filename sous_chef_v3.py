@@ -1,6 +1,6 @@
 # sous_chef_v3.py
 # Ryan Hua and Kofi Dinizulu
-# Handles six containers 
+# Handles six containers
 
 # calibrated to 1 gram
 
@@ -12,6 +12,8 @@ from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 from hx711 import HX711
 
 # if the mass less than zero, it should be zero
+
+
 def toZero(number):
     if (number < 0):
         return 0
@@ -19,6 +21,8 @@ def toZero(number):
         return number
 
 # clean up the pins
+
+
 def cleanAndExit():
     print("Cleaning...")
     GPIO.cleanup()
@@ -28,17 +32,37 @@ def cleanAndExit():
     sys.exit()
 
 # will need to work on this part
-def handleDispense(ID):
+
+
+def handleCWDispense(ID, TC):
     steppers[ID].ChangeDutyCycle(50)
     GPIO.output(DIRS[ID], GPIO.HIGH)
-    time.sleep(.05)
-    GPIO.output(DIRS[ID], GPIO.LOW)
-    time.sleep(.05)
+    time.sleep(TC)
     steppers[ID].ChangeDutyCycle(0)
-    time.sleep (.1)
+    time.sleep(.1)
+
+
+def handleCCDispense(ID, TC):
+    steppers[ID].ChangeDutyCycle(50)
+    GPIO.output(DIRS[ID], GPIO.LOW)
+    time.sleep(TC)
+    steppers[ID].ChangeDutyCycle(0)
+    time.sleep(.1)
+
+def handleSprinkleCCDispense(ID, TC):
+    steppers[ID].ChangeDutyCycle(50)
+    GPIO.output(DIRS[ID], GPIO.LOW)
+    time.sleep(TC)
+    steppers[ID].ChangeDutyCycle(0)
+
+def handleSprinkleCWDispense(ID, TC):
+    steppers[ID].ChangeDutyCycle(50)
+    GPIO.output(DIRS[ID], GPIO.HIGH)
+    time.sleep(TC)
+    steppers[ID].ChangeDutyCycle(0)
+
 
 class MotorControl(WebSocket):
-    print()
     def handleMessage(self):
         # loads JSON Object into a python array
         msg = json.loads(self.data)
@@ -48,28 +72,55 @@ class MotorControl(WebSocket):
             desired_grams = ingredient['grams']
             cur_grams = 0
             prev_grams = 0
-
+            stall = 0
+            isCW = True
             # reset the load cell
             hxs[ID].tare()
-
             while (desired_grams - cur_grams > 3):
-                handleDispense(ID)
+                if (isCW):
+                    handleCWDispense(ID, TIMECONST[ID])
+                    if (ID == 1):
+                        handleSprinkleCCDispense(ID, TIMECONST[ID])
+                else:
+                    handleCCDispense(ID, TIMECONST[ID])
+                    if (ID == 1):
+                        handleSprinkleCWDispense(ID, TIMECONST[ID])
                 prev_grams = cur_grams
-                cur_grams = cur_grams + 4
-                # cur_grams = toZero(hxs[ID].get_weight(5))
-                # set to cur_grams for food testing
-                val = toZero(hxs[ID].get_weight(5))
-                print(val)
-                if (prev_grams == cur_grams):
-                    alert = json.dumps({"type": "alert", "data": ID})
-                    self.sendMessage(alert)
-                    break
-                hxs[ID].power_down()
-                hxs[ID].power_up() 
-            completed = json.dumps({"type": "completed", "data": {"id": ID, "grams": cur_grams}})
+                cur_grams = toZero(hxs[ID].get_weight(5))
+                print(cur_grams)
+                if (cur_grams - prev_grams < 2):
+                    stall = stall + 1
+                    if (stall == 4):
+                        if (isCW):
+                            handleCWDispense(ID, TIMECONST[ID] + .2)
+                        else:
+                            handleCCDispense(ID, TIMECONST[ID] + .2)
+                        cur_grams = toZero(hxs[ID].get_weight(5))
+                        if (cur_grams - prev_grams < 2):
+                            alert = json.dumps(
+                                {
+                                    "type": "alert",
+                                    "data": {
+                                        "id": ID, "grams": cur_grams}
+                                })
+                            self.sendMessage(alert)
+                            return
+                        else:
+                            stall = 0
+                else:
+                    stall = 0
+                isCW = not isCW
+            completed = json.dumps(
+                {"type": "completed",
+                 "data": {
+                     "id": ID, "grams": cur_grams}
+                 })
             self.sendMessage(completed)
+            hxs[ID].power_down()
+            hxs[ID].power_up()
         else:
             print("else statement")
+
     def handleConnected(self):
         print(self.address, 'connected')
 
@@ -77,21 +128,32 @@ class MotorControl(WebSocket):
         print(self.address, 'closed')
         cleanAndExit()
 
+
+# Time Constants
+SPK = 2.25
+Sprinkles = .1
+GummyBear = 2.5
+Crackers = 1.75
+Dates = .75
+Raisins = 2.5
+
+TIMECONST = (SPK, Sprinkles, GummyBear, Crackers, Dates, Raisins)
+
 # HX711 initial pin setup
-hx0 = HX711(14,15)
-hx1 = HX711(18,23)
-hx2 = HX711(24,25)
-hx3 = HX711(12,16)
-hx4 = HX711(6,13)
-hx5 = HX711(19,26)
+hx0 = HX711(14, 15)
+hx1 = HX711(18, 23)
+hx2 = HX711(24, 25)
+hx3 = HX711(12, 16)
+hx4 = HX711(6, 13)
+hx5 = HX711(19, 26)
 
 # valus for ref unit. Should be set to 200 g
-REF0 = -3151 # 199
-REF1 = -3091 # 210
-REF2 = -3190 # 208
-REF3 = -3190 # 191
-REF4 = -2940 # 211
-REF5 = -3190 # 202
+REF0 = -3151  # 199
+REF1 = -3091  # 210
+REF2 = -3190  # 208
+REF3 = -3190  # 191
+REF4 = -2940  # 211
+REF5 = -3190  # 202
 
 # ref_unit tuple
 ref_unit = (REF0, REF1, REF2, REF3, REF4, REF5)
@@ -100,7 +162,7 @@ ref_unit = (REF0, REF1, REF2, REF3, REF4, REF5)
 hxs = (hx0, hx1, hx2, hx3, hx4, hx5)
 
 for x in range(6):
-    hxs[x].set_reading_format("MSB","MSB")
+    hxs[x].set_reading_format("MSB", "MSB")
 
     hxs[x].set_reference_unit(ref_unit[x])
 
