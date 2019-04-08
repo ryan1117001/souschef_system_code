@@ -218,7 +218,7 @@ for stepper in steppers:
 
 
 # server setup
-server = SimpleWebSocketServer('10.1.210.92', 8000, MotorControl)
+server = SimpleWebSocketServer('10.24.0.96', 8000, MotorControl)
 
 try:
     server.serveforever()

@@ -27,6 +27,7 @@ class SimpleEcho(WebSocket):
             self.sendMessage(completed)
         else:
             # add calibration code if time permits
+            pass
 
     def handleConnected(self):
         print(self.address, 'connected')
