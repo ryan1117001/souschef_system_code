@@ -24,8 +24,8 @@ def cleanAndExit():
     sys.exit()
 
 # HX711 initial pin setup
-# hx = HX711(14,15) # container 1
-hx = HX711(18,23) # container 2
+hx = HX711(14,15) # container 1
+# hx = HX711(18,23) # container 2
 # hx = HX711(24,25) # container 3
 # hx = HX711(12,16) # container 4
 # hx = HX711(6,13) # container 5
@@ -37,7 +37,7 @@ weight = 0
 hx.set_reading_format("MSB", "MSB")
 
 # hx weight reference. Set to 1 gram
-hx.set_reference_unit(-3091)
+hx.set_reference_unit(-3160.5 )
 hx.reset()
 hx.tare()
 print "Tare done! Add weight now..."

@@ -12,8 +12,6 @@ from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 from hx711 import HX711
 
 # if the mass less than zero, it should be zero
-
-
 def toZero(number):
     if (number < 0):
         return 0
@@ -21,8 +19,6 @@ def toZero(number):
         return number
 
 # clean up the pins
-
-
 def cleanAndExit():
     print("Cleaning...")
     GPIO.cleanup()
@@ -32,8 +28,6 @@ def cleanAndExit():
     sys.exit()
 
 # will need to work on this part
-
-
 def handleCWDispense(ID, TC):
     steppers[ID].ChangeDutyCycle(50)
     GPIO.output(DIRS[ID], GPIO.HIGH)
@@ -41,26 +35,12 @@ def handleCWDispense(ID, TC):
     steppers[ID].ChangeDutyCycle(0)
     time.sleep(.1)
 
-
 def handleCCDispense(ID, TC):
     steppers[ID].ChangeDutyCycle(50)
     GPIO.output(DIRS[ID], GPIO.LOW)
     time.sleep(TC)
     steppers[ID].ChangeDutyCycle(0)
     time.sleep(.1)
-
-def handleSprinkleCCDispense(ID, TC):
-    steppers[ID].ChangeDutyCycle(50)
-    GPIO.output(DIRS[ID], GPIO.LOW)
-    time.sleep(TC)
-    steppers[ID].ChangeDutyCycle(0)
-
-def handleSprinkleCWDispense(ID, TC):
-    steppers[ID].ChangeDutyCycle(50)
-    GPIO.output(DIRS[ID], GPIO.HIGH)
-    time.sleep(TC)
-    steppers[ID].ChangeDutyCycle(0)
-
 
 class MotorControl(WebSocket):
     def handleMessage(self):
@@ -76,7 +56,7 @@ class MotorControl(WebSocket):
             isCW = True
             # reset the load cell
             hxs[ID].tare()
-            while (desired_grams - cur_grams > 3):
+            while (desired_grams - cur_grams > 2):
                 if (isCW):
                     handleCWDispense(ID, TIMECONST[ID])
                     if (ID == 1):
@@ -131,13 +111,13 @@ class MotorControl(WebSocket):
 
 # Time Constants
 SPK = 2.25
-Sprinkles = .1
+Nuts = .15
 GummyBear = 2.5
 Crackers = 1.75
 Dates = .75
 Raisins = 2.5
 
-TIMECONST = (SPK, Sprinkles, GummyBear, Crackers, Dates, Raisins)
+TIMECONST = (SPK, Nuts, GummyBear, Crackers, Dates, Raisins)
 
 # HX711 initial pin setup
 hx0 = HX711(14, 15)
@@ -147,13 +127,13 @@ hx3 = HX711(12, 16)
 hx4 = HX711(6, 13)
 hx5 = HX711(19, 26)
 
-# valus for ref unit. Should be set to 200 g
-REF0 = -3151  # 199
-REF1 = -3091  # 210
-REF2 = -3190  # 208
-REF3 = -3190  # 191
-REF4 = -2940  # 211
-REF5 = -3190  # 202
+# valus for ref unit. Should be set to ~200 g
+REF0 = -3160.5  # 200.3
+REF1 = -3240.0  # 200.5
+REF2 = -3318.0  # 200.2
+REF3 = -3140.75 # 200.2
+REF4 = -3080.25 # 200.5
+REF5 = -3185.0  # 200.9
 
 # ref_unit tuple
 ref_unit = (REF0, REF1, REF2, REF3, REF4, REF5)
