@@ -24,34 +24,30 @@ def cleanAndExit():
     sys.exit()
 
 # HX711 initial pin setup
-hx0 = HX711(14,15)
-hx1 = HX711(18,23)
-hx2 = HX711(24,25)
-hx3 = HX711(12,16)
-hx4 = HX711(6,13)
-hx5 = HX711(19,26)
+# hx = HX711(14,15) # container 1
+hx = HX711(18,23) # container 2
+# hx = HX711(24,25) # container 3
+# hx = HX711(12,16) # container 4
+# hx = HX711(6,13) # container 5
+# hx = HX711(19,26) # container 6
 
-# hx tuple
-hxs = (hx0, hx1, hx2, hx3, hx4, hx5)
-weights = [0,0,0,0,0,0]
+weight = 0
 
-testing = 2
 # on how the data is read
-hxs[testing].set_reading_format("MSB", "MSB")
+hx.set_reading_format("MSB", "MSB")
 
 # hx weight reference. Set to 1 gram
-hxs[testing].set_reference_unit(1)
-hxs[testing].reset()
-hxs[testing].tare()
+hx.set_reference_unit(-3091)
+hx.reset()
+hx.tare()
 print "Tare done! Add weight now..."
 
 while True:
     try:
-        time.sleep(5)
-        val = hxs[testing].read_average(30)
+        val = hx.get_weight(5)
         print val
-        hxs[testing].power_down()
-        hxs[testing].power_up()
+        hx.power_down()
+        hx.power_up()
         time.sleep(.01)
     except KeyboardInterrupt, SystemError:
         cleanAndExit()
