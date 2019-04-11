@@ -27,17 +27,10 @@ def cleanAndExit():
     print("Bye!")
     sys.exit()
 
-# will need to work on this part
-def handleCWDispense(ID, TC):
+# spins the paddle in either clockwise or counterclockwise
+def handleDispense(ID, TC, CW):
     steppers[ID].ChangeDutyCycle(50)
-    GPIO.output(DIRS[ID], GPIO.HIGH)
-    time.sleep(TC)
-    steppers[ID].ChangeDutyCycle(0)
-    time.sleep(.1)
-
-def handleCCDispense(ID, TC):
-    steppers[ID].ChangeDutyCycle(50)
-    GPIO.output(DIRS[ID], GPIO.LOW)
+    GPIO.output(DIRS[ID], CW)
     time.sleep(TC)
     steppers[ID].ChangeDutyCycle(0)
     time.sleep(.1)
@@ -45,8 +38,11 @@ def handleCCDispense(ID, TC):
 class MotorControl(WebSocket):
     def handleMessage(self):
         # loads JSON Object into a python array
+        # {msg: "...", data: {id: ..., grams: ... }}
         msg = json.loads(self.data)
         if (msg["type"] == "dispense"):
+            
+            # set variables
             ingredient = msg["data"]
             ID = ingredient['id']
             desired_grams = ingredient['grams']
@@ -54,28 +50,35 @@ class MotorControl(WebSocket):
             prev_grams = 0
             stall = 0
             isCW = True
-            # reset the load cell
+            
+            # tare the load cell, value read will be zero
             hxs[ID].tare()
+
+            # Loop until under two grams of desired or more
             while (desired_grams - cur_grams > 2):
+                # spin clockwise or counterclockwise
                 if (isCW):
-                    handleCWDispense(ID, TIMECONST[ID])
-                    if (ID == 1):
-                        handleSprinkleCCDispense(ID, TIMECONST[ID])
+                    handleDispense(ID, TIMECONST[ID], isCW)
                 else:
-                    handleCCDispense(ID, TIMECONST[ID])
-                    if (ID == 1):
-                        handleSprinkleCWDispense(ID, TIMECONST[ID])
+                    handleDispense(ID, TIMECONST[ID], isCW)
+
+                # save the previous weight and retrieve current weight
                 prev_grams = cur_grams
                 cur_grams = toZero(hxs[ID].get_weight(5))
                 print(cur_grams)
+
+                # ingredients tend to get stuck, so to fix it,
+                # we give a greater push at the end to try one more time
                 if (cur_grams - prev_grams < 2):
                     stall = stall + 1
                     if (stall == 4):
                         if (isCW):
-                            handleCWDispense(ID, TIMECONST[ID] + .2)
+                            handleDispense(ID, TIMECONST[ID] + .2, isCW)
                         else:
-                            handleCCDispense(ID, TIMECONST[ID] + .2)
+                            handleDispense(ID, TIMECONST[ID] + .2, isCW)
                         cur_grams = toZero(hxs[ID].get_weight(5))
+
+                        # if it is still stalled or empty, send a lert message
                         if (cur_grams - prev_grams < 2):
                             alert = json.dumps(
                                 {
@@ -90,6 +93,7 @@ class MotorControl(WebSocket):
                 else:
                     stall = 0
                 isCW = not isCW
+            # if it gets to this point, the device has sent enough of the ingredient
             completed = json.dumps(
                 {"type": "completed",
                  "data": {
@@ -99,12 +103,15 @@ class MotorControl(WebSocket):
             hxs[ID].power_down()
             hxs[ID].power_up()
         else:
+            # Can added more message types here
             print("else statement")
 
     def handleConnected(self):
+        # print the address that connected to it
         print(self.address, 'connected')
 
     def handleClose(self):
+        # close and clean up the pins
         print(self.address, 'closed')
         cleanAndExit()
 
@@ -117,6 +124,7 @@ Crackers = 1.75
 Dates = .75
 Raisins = 2.5
 
+# Time constant tuple
 TIMECONST = (SPK, Nuts, GummyBear, Crackers, Dates, Raisins)
 
 # HX711 initial pin setup

@@ -15,12 +15,12 @@ else:
     from emulated_hx711 import HX711
 
 def cleanAndExit():
-    print "Cleaning..."
+    print("Cleaning...")
 
     if not EMULATE_HX711:
         GPIO.cleanup()
         
-    print "Bye!"
+    print("Bye!")
     sys.exit()
 
 # HX711 initial pin setup
@@ -40,12 +40,12 @@ hx.set_reading_format("MSB", "MSB")
 hx.set_reference_unit(-3160.5 )
 hx.reset()
 hx.tare()
-print "Tare done! Add weight now..."
+print("Tare done! Add weight now...")
 
 while True:
     try:
         val = hx.get_weight(5)
-        print val
+        print(val)
         hx.power_down()
         hx.power_up()
         time.sleep(.01)
